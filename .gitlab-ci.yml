@@ -20,4 +20,4 @@ restart:
   script:
     - docker stop emotechat-backend-neo || true
     - docker rm emotechat-backend-neo || true
-    - docker run --name emotechat-backend-neo --hostname emotechat-backend-neo.vpn.hdskins.de -d --restart unless-stopped --network nginxproxy -e RUST_LOG="$RUST_LOG" -e HOST="$HOST" -e PORT="$PORT" -e MONGO_URI="$MONGO_URI" -e MONGO_DATABASE="$MONGO_DATABASE" -e EMOTE_SPLITTER="$EMOTE_SPLITTER" emotechat/backend-neo
+    - docker run --name emotechat-backend-neo --hostname emotechat-backend-neo.vpn.hdskins.de -d --restart unless-stopped --network nginxproxy -e RUST_LOG="$RUST_LOG" -e HOST="$HOST" -e PORT="$PORT" -e MONGO_URI="$MONGO_URI" -e MONGO_DATABASE="$MONGO_DATABASE" -e EMOTE_SPLITTER="$EMOTE_SPLITTER" -e LEGACY_FALLBACK="$LEGACY_FALLBACK" emotechat/backend-neo
