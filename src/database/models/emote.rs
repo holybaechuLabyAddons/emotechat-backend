@@ -107,8 +107,11 @@ impl Emote {
 
         let client = reqwest::Client::new();
 
-        let legacy_response: LegacyEmote = client.get("https://api.emotechat.de/emote/get/".to_owned() + legacy_id)
-            .header(header::USER_AGENT, "LabyMod 4 EmoteChat API")
+        let legacy_response: LegacyEmote = client.get(format!(
+                "{}/emote/get/",
+                dotenvy::var("LEGACY_FALLBACK").unwrap_or("https://api.emotechat.de".to_string())
+            ).to_owned() + legacy_id)
+            .header(header::USER_AGENT, "LabyMod 4 EmoteChat API (https://neo.emotechat.de)")
             .send()
             .await
             .unwrap()
