@@ -6,4 +6,5 @@ COPY . .
 EXPOSE 3000/tcp
 
 RUN cargo build --release
-RUN ./target/release/emotechat-backend
+
+CMD [./target/release/emotechat-backend]
