@@ -93,7 +93,7 @@ impl Emote {
         Ok(collection.insert_one(self, None).await.map_err(|e| DatabaseError::Database(e))?)
     }
 
-    pub async fn find_one_and_update(db: &Database, filter: Document, update: Document, options: FindOneAndUpdateOptions) -> Result<Option<Self>, DatabaseError> {
+    pub async fn find_one_and_update(db: &Database, filter: Document, update: Document, options: Option<FindOneAndUpdateOptions>) -> Result<Option<Self>, DatabaseError> {
         let collection: Collection<Self> = db.collection("emotes");
 
         let existing_emote = collection.find_one_and_update(
@@ -130,6 +130,24 @@ impl Emote {
             .await
             .map_err(|e| ApiError::LegacyApiError(e))?;
 
+        let existing_emote = Self::find_one_and_update(db,
+            doc! {
+                "provider.id": {
+                    "$eq": &legacy_response.bttvId
+                },
+            },
+            doc! {
+                "$set": {
+                    "legacy_id": legacy_id
+                }
+            },
+            None
+        ).await.map_err(|e| ApiError::Database(e))?;
+
+        if let Some(emote) = existing_emote {
+            return Ok(emote);
+        }
+
         let emote = Emote {
             _id: Self::generate_id(db, &legacy_response.name).await.unwrap(),
             provider: EmoteProviderData {
@@ -142,24 +160,8 @@ impl Emote {
             legacy_id: Some(legacy_id.to_owned())
         };
 
-        let existing_emote = Self::find_one_and_update(db, doc! {
-            "provider.id": {
-                    "$eq": legacy_response.bttvId
-                }
-            }, doc! {
-                "$set": {
-                    "legacy_id": legacy_id
-                }
-            },
-            FindOneAndUpdateOptions::builder().upsert(true).build()
-        ).await.map_err(|e| ApiError::Database(e))?;
+        emote.insert(db).await.map_err(|e| ApiError::Database(e))?;
 
-        if let Some(mut emote) = existing_emote {
-            emote.legacy_id = Some(legacy_id.to_owned());
-
-            return Ok(emote);
-        }
-        
         Ok(emote)
     }
 }
