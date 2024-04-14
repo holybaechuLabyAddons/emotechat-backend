@@ -92,7 +92,18 @@ impl Emote {
     
         Ok(collection.insert_one(self, None).await.map_err(|e| DatabaseError::Database(e))?)
     }
-    
+
+    pub async fn find_one_and_update(db: &Database, filter: Document, update: Document, options: FindOneAndUpdateOptions) -> Result<Option<Self>, DatabaseError> {
+        let collection: Collection<Self> = db.collection("emotes");
+
+        let existing_emote = collection.find_one_and_update(
+            filter,
+            update,
+            options
+        ).await.map_err(|e| DatabaseError::Database(e))?;
+
+        Ok(existing_emote)
+    }
 
     pub async fn from_legacy_id(db: &Database, legacy_id: &str) -> Result<Self, ApiError> {
         let existing_emote = Self::find(db, doc! {
@@ -123,15 +134,32 @@ impl Emote {
             _id: Self::generate_id(db, &legacy_response.name).await.unwrap(),
             provider: EmoteProviderData {
                 provider: EmoteProvider::BTTV,
-                id: legacy_response.bttvId
+                id: legacy_response.bttvId.clone()
             },
             image_type: legacy_response.imageType.clone(),
             animated: legacy_response.imageType == "gif",
             banned: legacy_response.banned,
             legacy_id: Some(legacy_id.to_owned())
         };
-        let _ = emote.insert(db).await.map(|_| emote.clone()).map_err(|e| ApiError::Database(e));            
 
+        let existing_emote = Self::find_one_and_update(db, doc! {
+            "provider.id": {
+                    "$eq": legacy_response.bttvId
+                }
+            }, doc! {
+                "$set": {
+                    "legacy_id": legacy_id
+                }
+            },
+            FindOneAndUpdateOptions::builder().upsert(true).build()
+        ).await.map_err(|e| ApiError::Database(e))?;
+
+        if let Some(mut emote) = existing_emote {
+            emote.legacy_id = Some(legacy_id.to_owned());
+
+            return Ok(emote);
+        }
+        
         Ok(emote)
     }
 }
