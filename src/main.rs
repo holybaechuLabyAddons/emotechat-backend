@@ -13,10 +13,10 @@ async fn main() {
     dotenv().ok();
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
-    info!("Connecting to database...");
-    let db = mongo::connect().await.expect("Failed to connect to database");
+    info!("Connecting to MongoDB instance...");
+    let db = mongo::connect().await.expect("Failed to connect to MongoDB instance");
 
-    info!("Starting HTTP Server...");
+    info!("Starting HTTP Server on {}:{}...", dotenvy::var("HOST").expect("HOST must be set"), dotenvy::var("PORT").expect("PORT must be set"));
 
     let router = Router::new()
         .route("/", get(|| async { Json(json!({
@@ -30,8 +30,10 @@ async fn main() {
     );
 
     let listener = tokio::net::TcpListener::bind(
-        format!("{}:{}", dotenvy::var("HOST").expect("HOST must be set"), dotenvy::var("PORT").expect("PORT must be set"))
-    ).await.expect("Failed to bind to port");
+        format!("{}:{}", dotenvy::var("HOST").unwrap(), dotenvy::var("PORT").unwrap())
+    ).await.expect(format!("Failed to bind to {:?} port {:?}", dotenvy::var("HOST").unwrap(), dotenvy::var("PORT").unwrap()).as_str());
     
     axum::serve(listener, app).await.expect("Failed to start server");
+
+    info!("Server started on http://{}:{}", dotenvy::var("HOST").unwrap(), dotenvy::var("PORT").unwrap());
 }
