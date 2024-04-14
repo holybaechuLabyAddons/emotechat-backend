@@ -1,0 +1,23 @@
+default:
+  tags:
+    - linux
+
+stages:
+  - build
+  - restart
+
+build:
+  stage: build
+  only:
+    - master
+  script:
+    - docker build -t emotechat/backend-neo .
+
+restart:
+  stage: restart
+  only:
+    - master
+  script:
+    - docker stop emotechat_backend_neo || true
+    - docker rm emotechat_backend_neo || true
+    - docker run --name emotechat_backend_neo --hostname emotechat-backend-neo.vpn.hdskins.de -d --restart unless-stopped --network nginxproxy -e RUST_LOG="$RUST_LOG" -e HOST="$HOST" -e PORT=3000 -e MONGO_URI="$MONGO_URI" -e MONGO_DATABASE="$MONGO_DATABASE" -e EMOTE_SPLITTER="$EMOTE_SPLITTER" emotechat/backend-neo
