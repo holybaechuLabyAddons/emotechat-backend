@@ -32,8 +32,7 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(
         format!("{}:{}", dotenvy::var("HOST").unwrap(), dotenvy::var("PORT").unwrap())
     ).await.expect(format!("Failed to bind to {:?} port {:?}", dotenvy::var("HOST").unwrap(), dotenvy::var("PORT").unwrap()).as_str());
-    
-    axum::serve(listener, app).await.expect("Failed to start server");
+    info!("Listening on http://{}", listener.local_addr().unwrap());
 
-    info!("Server started on http://{}:{}", dotenvy::var("HOST").unwrap(), dotenvy::var("PORT").unwrap());
+    axum::serve(listener, app).await.expect("Failed to start server");
 }
