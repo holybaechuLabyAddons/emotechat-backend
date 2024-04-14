@@ -10,7 +10,7 @@ use tower_layer::Layer;
 
 #[tokio::main]
 async fn main() {
-    dotenv().expect("Failed to load .env file");
+    dotenv().ok();
     env_logger::Builder::from_env(Env::default().default_filter_or("info")).init();
 
     info!("Connecting to database...");
@@ -24,7 +24,7 @@ async fn main() {
         }))}))
         .merge(routes::v1::config())
         .layer(Extension(db.clone()));
-    
+
     let app = ServiceExt::<Request>::into_make_service(
         NormalizePathLayer::trim_trailing_slash().layer(router)
     );
