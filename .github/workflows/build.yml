@@ -1,0 +1,64 @@
+name: "Build and deploy"
+
+on:
+    push:
+        branches:
+            - "master"
+
+jobs:
+    build:
+        runs-on: "ubuntu-latest"
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Install Rust toolchain
+              run: |
+                rustup update --no-self-update
+                rustup component add rustfmt rust-src
+                rustup default
+
+            - name: "Build"
+              run: cargo build --release
+
+            - name: Upload to Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: Build
+                path: ./target/release/emotechat-backend
+
+    deploy:
+        runs-on: "ubuntu-latest"
+        needs: build
+
+        steps:
+            - name: Download build from Artifact
+              uses: actions/download-artifact@v4
+              with: 
+                name: Build
+
+            - name: Stop Pterodactyl
+              uses: D3OXY/pterodactyl-power@V1
+              with: 
+                PANEL_URL: ${{ secrets.PANEL_HOST }}
+                API_KEY: ${{ secrets.API_KEY }}
+                SERVER_ID: ${{ secrets.SERVER_ID }}
+                POWER_ACTION: "STOP"
+
+            - name: Upload to Pterodactyl
+              uses: rexlmanu/pterodactyl-upload-action@v2.4
+              with: 
+                panel-host: ${{ secrets.PANEL_HOST }}
+                api-key: ${{ secrets.API_KEY }}
+                server-id: ${{ secrets.SERVER_ID }}
+                source: emotechat-backend
+                target: "./"
+
+            - name: Start Pterodactyl
+              uses: D3OXY/pterodactyl-power@V1
+              with: 
+                PANEL_URL: ${{ secrets.PANEL_HOST }}
+                API_KEY: ${{ secrets.API_KEY }}
+                SERVER_ID: ${{ secrets.SERVER_ID }}
+                POWER_ACTION: "START"
