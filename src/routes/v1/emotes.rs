@@ -62,8 +62,11 @@ async fn get_emote(Path(id): Path<String>, db: Extension<Database>) -> Result<Js
         return Ok(Json(Emote::from_legacy_id(&db, &id).await.map_err(|e| e)?));
     }
 
-    let collection: Collection<Emote> = db.collection("emotes");
-    let emote = collection.find_one(doc! {"_id": id}, None).await.map_err(|e| ApiError::Database(DatabaseError::Database(e)))?;
+    let emote = Emote::find(&db, doc! {
+        "_id": {
+            "$eq": id
+        }
+    }).await.map_err(|e| ApiError::Database(e))?;
 
     Ok(Json(emote.ok_or(ApiError::NotFound)?))
 }
