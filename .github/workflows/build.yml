@@ -17,7 +17,7 @@ jobs:
               run: |
                 rustup update --no-self-update
                 rustup component add rustfmt rust-src
-                rustup default
+                rustup default nightly
 
             - name: "Build"
               run: cargo build --release
