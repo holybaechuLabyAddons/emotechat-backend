@@ -6,7 +6,6 @@ WORKDIR /usr/src/app
 COPY . .
 
 # Compile
-ENV RUSTFLAGS "-Z threads=8"
 RUN cargo build --release
 
 # Run the backend
