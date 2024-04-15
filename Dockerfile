@@ -1,5 +1,5 @@
 # We are using the nightly build of Rust so we can compile with threads
-FROM rust:nightly
+FROM ghcr.io/rust-lang/rust:nightly
 
 # Copy the source code into the container
 WORKDIR /usr/src/app
